@@ -1,17 +1,32 @@
 import json
 import dateutil.parser
 import datetime
+import os.path
+import numpy as np
+import numpy_financial as npf
+import datetime
+import pickle
+from dateutil.relativedelta import relativedelta
+
 
 from data import Portfolio, Investiment, Payment, Deposit
 
 
 def init_portfolio(platform):
-    return Portfolio(platform)
+    if os.path.isfile('{}.data'.format(platform)):
+        print('File exists. Loading...')
+        with open('{}.data'.format(platform), 'rb') as data_file:
+            portfolio = pickle.load(data_file)
+            return portfolio
+    else:
+        print('File does not exist. Initializing...')
+        return Portfolio(platform)
 
-def load_portfolio_from_iouu():
+def update_iouu():
+    platform = 'iouu'
+    portfolio = init_portfolio(platform)
     with open('data/iouu/202012/investments.json') as json_file:
         data = json.load(json_file)
-        portfolio = init_portfolio('iouu')
         for i in data:
             prop = i['SolicitacaoId']
             id = prop["_id"]
@@ -25,11 +40,13 @@ def load_portfolio_from_iouu():
             if valid:
                 portfolio.add_investment(Investiment(id, name, rate, periods, amount, created))
 
-        load_payments_from_iouu(portfolio)
-        return portfolio
+        update_iouu_payments(portfolio)
+
+    with open('{}.data'.format(platform), 'wb') as data_file:
+        pickle.dump(portfolio, data_file)
 
 
-def load_payments_from_iouu(portfolio):
+def update_iouu_payments(portfolio):
 
     with open('data/iouu/202012/wallet.json') as json_file:
         data = json.load(json_file)

@@ -3,16 +3,16 @@ import numpy_financial as npf
 import datetime
 from dateutil.relativedelta import relativedelta
 
-from data import Investiment, get_interval_in_months
-from read import load_portfolio_from_iouu, load_payments_from_iouu
+from read import init_portfolio
 
+today = datetime.datetime.now()
+from_date = today + relativedelta(years=-1)
 
-from_date = datetime.datetime(2019, 10, 22)
+portfolio = init_portfolio('iouu')
 
-portfolio = load_portfolio_from_iouu()
-
-for i in range(70):
+for i in range(53):
     curr_date = from_date + relativedelta(weeks=+i)
     print(curr_date)
-    print('\t {}'.format( portfolio.get_value_at(curr_date)) )
+    print('\t {:.2f}'.format( portfolio.get_value_at(curr_date)) )
+    print('\t {:.2f}'.format( portfolio.get_deposits_at(curr_date)) )
 
