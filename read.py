@@ -46,19 +46,50 @@ def update_iouu():
         pickle.dump(portfolio, data_file)
 
 
+def extract_date_part(datestr):
+    date_part = datestr.split('T')[0]
+    return date_part
+
+
+def extract_date(datestr):
+    date_part = extract_date_part(datestr)
+    date = datetime.datetime.strptime(date_part, '%Y-%m-%d')
+    return date
+
+
 def update_iouu_payments(portfolio):
 
     with open('data/iouu/202012/wallet.json') as json_file:
         data = json.load(json_file)
+        visited_transactions = set()
+        balance = 0
+
+        transactions = []
 
         for i in data:
-            for tx in i['Operacoes']:
-                is_payment = tx['Tipo'] == 'PAGAMENTO'
-                is_deposit = (tx['Tipo'] == 'DEPOSITO' or tx['Tipo'] == 'TRANSFERENCIA')
+            transactions = transactions + i['Operacoes']
 
-                id = tx['id']
+        transactions.sort(key=(lambda tx: extract_date(tx['Data'])))
+        daily_balance = {}
+
+        for tx in transactions:
+            is_payment = tx['Tipo'] == 'PAGAMENTO'
+            is_deposit = (tx['Tipo'] == 'DEPOSITO' or tx['Tipo'] == 'TRANSFERENCIA')
+
+            id = tx['id']
+            if id not in visited_transactions:
+                visited_transactions.add(id)
+                balance += tx['Valor']
+                date_key = extract_date_part(tx['Data'])
+                daily_balance[date_key] = {
+                    'date':  extract_date(tx['Data']),
+                    'value': balance
+                }
+
+                print('\t{}'.format(tx['Valor']))
+                print('{}'.format(balance))
                 if is_payment:
-                    date = datetime.datetime.strptime(tx['Data'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                    date = extract_date(tx['Data'])
                     inv_id = tx['Detalhes']['Pagamento']['SolicitacaoId']
                     gross_value = tx['Detalhes']['Pagamento']['ValorBruto']
                     period = tx['Detalhes']['Pagamento']['IndiceParcela']
@@ -73,9 +104,9 @@ def update_iouu_payments(portfolio):
 
                     portfolio.investments[inv_id].add_payment(pmt)
                 elif is_deposit:
-                    date_part = tx['Data'].split('T')[0]
-                    date = datetime.datetime.strptime(date_part, '%Y-%m-%d')
+                    date = extract_date(tx['Data'])
                     value = tx['Valor']
                     deposit = Deposit(id, date, value)
                     portfolio.add_deposit(deposit)
-        return data
+
+        portfolio.set_daily_balance(daily_balance)
