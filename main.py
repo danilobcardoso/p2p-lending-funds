@@ -14,10 +14,14 @@ portfolio = init_portfolio('iouu')
 
 print(portfolio)
 
-for i in range(58):
-    curr_date = from_date + relativedelta(weeks=+i)
-    print(curr_date)
-    print('\t {:.2f}'.format( portfolio.get_balance_at(curr_date)) )
+data = portfolio.calc_quota_value(from_date, today)
+
+print(data)
+
+#for i in range(58):
+#    curr_date = from_date + relativedelta(weeks=+i)
+#    print(curr_date)
+#    print('\t {:.2f}'.format( portfolio.get_balance_at(curr_date)) )
 
 
 

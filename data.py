@@ -60,12 +60,12 @@ class Portfolio:
         daily_balance.sort(key=lambda b: b['date'])
         last_balance = 0
         for balance in daily_balance:
-            if balance['date'] > date:
+            if balance['date'].date() >= date.date():
                 break
             last_balance = balance['value']
         return last_balance
 
-    def get_deposits_at(self, date):
+    def sum_deposits_until(self, date):
         total = 0
 
         for i, (key, deposit) in enumerate(self.deposits.items()):
@@ -73,6 +73,55 @@ class Portfolio:
                 total += deposit.value
 
         return total
+
+    def get_deposits_at(self, date):
+        total = 0
+
+        for i, (key, deposit) in enumerate(self.deposits.items()):
+            if deposit.date.date() == date.date():
+                total += deposit.value
+
+        return total
+
+    def calc_quota_value(self, from_date, to_date):
+        curr_date = from_date
+        curr_quotas = 0.0
+        curr_quota_value = 0.0
+        data = []
+        value_today = self.get_value_at(curr_date)
+        if value_today > 0:
+            curr_quotas = 1.0
+            curr_quota_value = self.get_value_at(curr_date)
+
+        while curr_date < to_date:
+            value_today = self.get_value_at(curr_date)
+            deposits_today = self.get_deposits_at(curr_date)
+            if curr_quotas == 0.0:
+                if deposits_today > 0.0:
+                    curr_quotas = 1.0
+                    curr_quota_value = self.get_value_at(curr_date)
+            else:
+                if deposits_today != 0.0:
+                    new_quotas = deposits_today / curr_quota_value
+                    curr_quotas += new_quotas
+                curr_quota_value = self.get_value_at(curr_date) / curr_quotas
+
+
+            data.append({
+                'date': curr_date,
+                'num_quotas': curr_quotas,
+                'quota_value': curr_quota_value
+            })
+
+            print(curr_date)
+            print('\t{}\t{}\t{}'.format(deposits_today, value_today, curr_quotas))
+
+            curr_date = curr_date + relativedelta(days=1)
+
+        return data
+
+
+
 
     def __str__(self):
         return reduce((lambda x, y: x + '\n' + y), map((lambda x: x.id + ' - ' + x.name), self.investments.values()))
@@ -221,4 +270,10 @@ class Deposit:
         self.id = id
         self.date = date
         self.value = value
+
+    def __str__(self):
+        return '{} {} {}'.format(self.id, self.date, self.value)
+
+    def __repr__(self):
+        return self.__str__()
 

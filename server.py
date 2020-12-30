@@ -22,7 +22,7 @@ class Portfolio(Resource):
         portfolio = init_portfolio('iouu')
         portifolio_debts = []
         portifolio_value = []
-        portifolio_account = []
+        portifolio_cash = []
         portifolio_allocated = []
         portifolio_deposits = []
 
@@ -35,13 +35,13 @@ class Portfolio(Resource):
             } )
             portifolio_deposits.append( {
                 'name': curr_date.strftime("%d/%m/%Y"),
-                'value': portfolio.get_deposits_at(curr_date)
+                'value': portfolio.sum_deposits_until(curr_date)
             })
             portifolio_debts.append({
                 'name': curr_date.strftime("%d/%m/%Y"),
                 'value': portfolio.get_debt_at(curr_date)
             })
-            portifolio_account.append({
+            portifolio_cash.append({
                 'name': curr_date.strftime("%d/%m/%Y"),
                 'value': portfolio.get_balance_at(curr_date)
             })
@@ -54,11 +54,32 @@ class Portfolio(Resource):
             { 'name': 'Valor do portifólio', 'series': portifolio_value },
             {'name': 'Depositos', 'series': portifolio_deposits},
             {'name': 'Débitos', 'series': portifolio_debts},
-            {'name': 'Conta', 'series': portifolio_account},
+            {'name': 'Conta', 'series': portifolio_cash},
             {'name': 'Alocado', 'series': portifolio_allocated},
         ]
 
+
+class Returns(Resource):
+    def get(self):
+        portfolio = init_portfolio('iouu')
+        today = datetime.datetime.now()
+        from_date = today + relativedelta(months=-12)
+        data = portfolio.calc_quota_value(from_date, today)
+        daily_returns = []
+        for daily_data in data:
+            daily_returns.append({
+                'name': daily_data['date'].strftime("%d/%m/%Y"),
+                'value': daily_data['quota_value']
+            })
+
+        return [
+            {'name': 'Valor da cota', 'series': daily_returns}
+        ]
+
+
+
 api.add_resource(Portfolio, '/portfolio')
+api.add_resource(Returns, '/returns')
 
 if __name__ == '__main__':
      app.run(port=5002)

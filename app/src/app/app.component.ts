@@ -11,8 +11,9 @@ export class AppComponent {
   serverData: JSON;
   employeeData: JSON;
 
-  multi: any[];
-  view: any[] = [1800, 700];
+  portifolio: any[];
+  returns: any[];
+  view: any[] = [1800, 400];
 
   // options
   yAxisLabel: string = 'Valor';
@@ -32,7 +33,12 @@ export class AppComponent {
 
   getAllEmployees() {
     this.httpClient.get('http://127.0.0.1:5002/portfolio').subscribe(data => {
-      this.multi = data as any[];
+      this.portifolio = data as any[];
+    })
+
+    this.httpClient.get('http://127.0.0.1:5002/returns').subscribe(data => {
+      console.log(data);
+      this.returns = data as any[];
     })
   }
 
